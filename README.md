@@ -14,12 +14,30 @@ SpeedyFit fits stellar SEDs using Bayesian inference and MCMC. This wrapper exte
 
 ## Requirements
 
-- [SpeedyFit](https://speedyfit.readthedocs.io/en/latest/)
-- Python 3.8+
-- `numpy`
-- `scipy`
-- `astropy`
-- `matplotlib`
+- Python 3.8
+- [SpeedyFit](https://speedyfit.readthedocs.io/en/latest/) 0.2.4
+
+| Package | Version |
+|---|---|
+| astropy | 5.2.2 |
+| astroquery | 0.4.7 |
+| corner | 2.2.1 |
+| emcee | 3.1.6 |
+| h5py | 3.11.0 |
+| matplotlib | 3.7.5 |
+| numpy | 1.24.4 |
+| pandas | 2.0.3 |
+| scipy | 1.10.1 |
+| pyaml | 25.1.0 |
+| tqdm | 4.67.1 |
+
+Install into a conda environment:
+
+```bash
+conda create -n sed_fitting python=3.8
+conda activate sed_fitting
+pip install speedyfit==0.2.4 astropy astroquery numpy scipy matplotlib pandas emcee corner h5py tqdm pyaml
+```
 
 ## File Structure
 
