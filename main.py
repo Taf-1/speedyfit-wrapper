@@ -24,10 +24,7 @@ def arg_parse():
     p.add_argument("n_iter",               type=int,   help="Max iterations", default=20)
     p.add_argument("conv_rms",             type=float, help="Convergence RMS threshold", default=1.0)
     p.add_argument("r_max",                type=float, help="Roche lobe radius in R_sun")
-    p.add_argument("t_wd",                 type=float, help="WD effective temperature in K")
-    p.add_argument("r_wd",                 type=float, help="WD radius in R_sun")
-    p.add_argument("t_comp",               type=float, help="Companion effective temperature in K")
-    p.add_argument("r_comp",               type=float, help="Companion radius in R_sun (LC value)")
+    p.add_argument("r_comp",               type=float, help="Companion radius in R_sun (light-curve value)")
     p.add_argument("--r_comp_sed",         type=float, default=None,
                    help="Companion radius in R_sun (SpeedyFit fitted); auto-read from results file if omitted")
     return p.parse_args()
@@ -94,11 +91,11 @@ def main():
     n_iter      = args.n_iter
     conv_rms    = args.conv_rms
     r_max       = args.r_max
-    t_wd        = args.t_wd
-    r_wd        = args.r_wd
-    t_comp      = args.t_comp
     r_comp      = args.r_comp
     r_comp_sed  = args.r_comp_sed
+    t_wd        = None
+    r_wd        = None
+    t_comp      = None
 
     logger       = sf_logging(stage_name=name, log_file=f"{name}_logfile.log").setup_logger()
     updater      = update_phot_and_yaml(binary_name=name)
