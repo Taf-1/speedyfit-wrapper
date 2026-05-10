@@ -33,7 +33,7 @@ def arg_parse():
     return p.parse_args()
 
 
-def read_rad2_from_results(phot_file: str) -> float:
+def read_sf_results(phot_file: str) -> dict:
     import glob, csv
     from pathlib import Path
     stem = Path(phot_file).stem
@@ -43,7 +43,7 @@ def read_rad2_from_results(phot_file: str) -> float:
             with open(path) as f:
                 reader = csv.DictReader(f)
                 row = next(reader)
-                return float(row['rad2'])
+                return {k: float(row[k]) for k in ('teff', 'rad', 'teff2', 'rad2')}
         except (FileNotFoundError, ValueError, KeyError, StopIteration):
             continue
     raise FileNotFoundError(
@@ -110,9 +110,14 @@ def main():
     shutil.copy(OBS_FILE, initial_obs_file)
     logger.info(f"Saved initial observations to {initial_obs_file}")
 
+    sf_params  = read_sf_results(phot_file)
+    t_wd       = sf_params['teff']
+    r_wd       = sf_params['rad']
+    t_comp     = sf_params['teff2']
     if r_comp_sed is None:
-        r_comp_sed = read_rad2_from_results(phot_file)
-        logger.info(f"Read r_comp_sed={r_comp_sed:.4f} R_sun from SpeedyFit results")
+        r_comp_sed = sf_params['rad2']
+    logger.info(f"SpeedyFit initial results: T_wd={t_wd:.0f} K, R_wd={r_wd:.5f} R_sun, "
+                f"T_comp={t_comp:.0f} K, r_comp_sed={r_comp_sed:.4f} R_sun")
 
     obs_wave, obs_flux, obs_err, obs_band, mod_flux = read_sf_outputs()
 
@@ -201,10 +206,16 @@ def main():
 
     if current_phot != phot_file:
         try:
-            r_comp_sed = read_rad2_from_results(current_phot)
-            logger.info(f"Updated r_comp_sed={r_comp_sed:.4f} R_sun from final iteration results")
+            sf_params  = read_sf_results(current_phot)
+            t_wd       = sf_params['teff']
+            r_wd       = sf_params['rad']
+            t_comp     = sf_params['teff2']
+            r_comp_sed = sf_params['rad2']
+            logger.info(f"Updated from final iteration results: T_wd={t_wd:.0f} K, "
+                        f"R_wd={r_wd:.5f} R_sun, T_comp={t_comp:.0f} K, "
+                        f"r_comp_sed={r_comp_sed:.4f} R_sun")
         except FileNotFoundError:
-            logger.warning("Could not update r_comp_sed from final run; using initial value")
+            logger.warning("Could not read final iteration results; using initial SpeedyFit values")
 
     logger.info(f"Final: T_disc={T_disc:.0f} K (Wien), R_disc={R_disc:.4f}±{R_err:.4f} R_sun")
 
