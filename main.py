@@ -131,11 +131,13 @@ def main():
     R_disc = min(R_disc, r_max * 0.9) if np.isfinite(R_disc) else r_max * 0.5
     logger.info(f"Initial guess: T_disc={T_disc:.0f} K, R_disc={R_disc:.3f} R_sun")
 
-    T_err        = 0.0
-    R_err        = 0.0
-    disc_flux_ir = np.zeros_like(ir_wave)
-    current_yaml = binary_yaml
-    iter_yamls   = []
+    T_err             = 0.0
+    R_err             = 0.0
+    disc_flux_ir      = np.zeros_like(ir_wave)
+    current_yaml      = binary_yaml
+    iter_yamls        = []
+    total_disc_by_band = {}
+    wave_by_band       = {}
 
     for n in range(n_iter):
 
@@ -165,6 +167,10 @@ def main():
         R_err  = np.sqrt(pcov[0, 0])
 
         disc_flux_ir = fit_func_R(ir_wave, R_disc)
+
+        for b, w, f in zip(ir_band[pos], ir_wave[pos], disc_flux_ir[pos]):
+            total_disc_by_band[b] = total_disc_by_band.get(b, 0.0) + f
+            wave_by_band[b] = w
 
         rms = np.sqrt(np.mean(((fit_exc - disc_flux_ir[pos]) / fit_err) ** 2))
         logger.info(f"Iter {n+1}: T={T_disc:.0f} K (Wien), "
@@ -213,6 +219,30 @@ def main():
                         f"r_comp_sed={r_comp_sed:.4f} R_sun")
         except FileNotFoundError:
             logger.warning("Could not read final iteration results; using initial SpeedyFit values")
+
+    if total_disc_by_band:
+        t_wave_tot = np.array([wave_by_band[b]       for b in total_disc_by_band])
+        t_flux_tot = np.array([total_disc_by_band[b] for b in total_disc_by_band])
+        srt        = np.argsort(t_wave_tot)
+        t_wave_tot, t_flux_tot = t_wave_tot[srt], t_flux_tot[srt]
+
+        T_disc = disc_params(t_wave_tot, t_flux_tot,
+                             np.ones_like(t_flux_tot) * t_flux_tot.mean() * 0.1,
+                             dist).wien_temp()
+
+        def fit_total(lam, R, _T=T_disc):
+            return np.array([bb_model(w, _T, R, dist).blackbody_flux() for w in lam])
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            popt_tot, pcov_tot = curve_fit(
+                fit_total, t_wave_tot, t_flux_tot,
+                p0=[R_disc], bounds=([0], [r_max])
+            )
+        R_disc = popt_tot[0]
+        R_err  = np.sqrt(pcov_tot[0, 0])
+        logger.info(f"Total disc fit: T_disc={T_disc:.0f} K (Wien), "
+                    f"R_disc={R_disc:.4f}±{R_err:.4f} R_sun")
 
     logger.info(f"Final: T_disc={T_disc:.0f} K (Wien), R_disc={R_disc:.4f}±{R_err:.4f} R_sun")
 
