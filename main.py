@@ -175,7 +175,7 @@ def main():
         dF_dR = (fit_func_R(ir_wave, R_disc + eps_R) - disc_flux_ir) / eps_R
         disc_err_ir = dF_dR * R_err
 
-        new_phot     = updater.phot(current_phot, ir_band[pos], disc_flux_ir[pos], disc_err_ir[pos], n + 1)
+        new_phot     = updater.phot(phot_file, ir_band[pos], disc_flux_ir[pos], disc_err_ir[pos], n + 1)
         new_yaml     = updater.yaml(binary_yaml, new_phot, n + 1)
         iter_yamls.append(new_yaml)
         current_phot = new_phot
