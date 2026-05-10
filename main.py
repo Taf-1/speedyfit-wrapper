@@ -159,7 +159,7 @@ def main():
 
         disc_flux_ir = fit_func_R(ir_wave, R_disc)
 
-        rms = np.sqrt(np.mean(((ir_flux_exc - disc_flux_ir) / ir_flux_exc_err) ** 2))
+        rms = np.sqrt(np.mean(((fit_exc - disc_flux_ir[pos]) / fit_err) ** 2))
         logger.info(f"Iter {n+1}: T={T_disc:.0f} K (Wien), "
                     f"R={R_disc:.3f}±{R_err:.3f} R_sun, RMS={rms:.4f}")
         if rms < conv_rms:
@@ -170,7 +170,7 @@ def main():
         dF_dR = (fit_func_R(ir_wave, R_disc + eps_R) - disc_flux_ir) / eps_R
         disc_err_ir = dF_dR * R_err
 
-        new_phot     = updater.phot(current_phot, ir_band, disc_flux_ir, disc_err_ir, n + 1)
+        new_phot     = updater.phot(current_phot, ir_band[pos], disc_flux_ir[pos], disc_err_ir[pos], n + 1)
         new_yaml     = updater.yaml(binary_yaml, new_phot, n + 1)
         iter_yamls.append(new_yaml)
         current_phot = new_phot
@@ -193,6 +193,13 @@ def main():
             os.remove(f)
         except FileNotFoundError:
             pass
+
+    if current_phot != phot_file:
+        try:
+            r_comp_sed = read_rad2_from_results(current_phot)
+            logger.info(f"Updated r_comp_sed={r_comp_sed:.4f} R_sun from final iteration results")
+        except FileNotFoundError:
+            logger.warning("Could not update r_comp_sed from final run; using initial value")
 
     logger.info(f"Final: T_disc={T_disc:.0f} K (Wien), R_disc={R_disc:.4f}±{R_err:.4f} R_sun")
 
