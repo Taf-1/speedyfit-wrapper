@@ -30,20 +30,24 @@ class update_phot_and_yaml():
     def __init__(self, binary_name: str):
         self.name = binary_name
 
-    def phot(self, phot_path: str, ir_bands: np.ndarray,
+    def phot(self, phot_path: str, orig_phot_path: str, ir_bands: np.ndarray,
              disc_flux: np.ndarray, disc_err: np.ndarray,
              iteration: int) -> str:
-        phot = ascii.read(phot_path, format='fixed_width')
-        disc_map = {band: (f, e) for band, f, e in zip(ir_bands, disc_flux, disc_err)}
+        phot      = ascii.read(phot_path,      format='fixed_width')
+        orig_phot = ascii.read(orig_phot_path, format='fixed_width')
+        disc_map  = {band: (f, e) for band, f, e in zip(ir_bands, disc_flux, disc_err)}
 
-        flux_col  = np.array(phot['flux'],  dtype=float)
-        eflux_col = np.array(phot['eflux'], dtype=float)
+        flux_col       = np.array(phot['flux'],       dtype=float)
+        eflux_col      = np.array(phot['eflux'],      dtype=float)
+        orig_eflux_col = np.array(orig_phot['eflux'], dtype=float)
 
         for i, band in enumerate(phot['band']):
             if band in disc_map:
                 df, de = disc_map[band]
                 flux_col[i]  = max(0.0, flux_col[i] - df)
-                eflux_col[i] = np.sqrt(eflux_col[i]**2 + de**2)
+                eflux_col[i] = np.sqrt(orig_eflux_col[i]**2 + de**2)
+                if flux_col[i] < eflux_col[i]:
+                    flux_col[i] = 0.0
 
         phot['flux']  = flux_col
         phot['eflux'] = eflux_col
