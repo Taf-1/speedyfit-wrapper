@@ -267,11 +267,14 @@ class disc_sed:
 
         F_disc_plot  = _bb_flux(wave_plot, self.t_disc, self.r_disc, self.dist)
         F_2comp_plot = F_wd_plot + F_comp_plot
-        F_3comp_plot = F_2comp_plot + F_disc_plot
 
-        F_disc_obs  = _bb_flux(obs_wave, self.t_disc, self.r_disc, self.dist)
+        valid = (obs_flux > 0) & np.isfinite(obs_flux) & (obs_flux > obs_err)
+        obs_wave, obs_flux, obs_err, obs_band = (
+            obs_wave[valid], obs_flux[valid], obs_err[valid], obs_band[valid]
+        )
+        F_2comp = F_2comp[valid]
+
         resid_2comp = -2.5 * np.log10(F_2comp / obs_flux)
-        resid_3comp = -2.5 * np.log10((F_2comp + F_disc_obs) / obs_flux)
         resid_err   =  2.5 / np.log(10) * obs_err / obs_flux
 
         fig, (ax1, ax2) = plt.subplots(
@@ -285,8 +288,8 @@ class disc_sed:
                    label=f'Companion ({self.t_comp:.0f} K)')
         ax1.loglog(wave_plot, F_disc_plot,  '--', color='#9B2FAA', lw=1.2, zorder=4,
                    label=fr'Disc ($T={self.t_disc:.0f}$ K, $R={self.r_disc:.3f}\,R_\odot$)')
-        ax1.loglog(wave_plot, F_3comp_plot, '-',  color='#C0392B', lw=1.5, zorder=5,
-                   label='WD + companion + disc')
+        ax1.loglog(wave_plot, F_2comp_plot, '-',  color='#C0392B', lw=1.5, zorder=5,
+                   label='WD + companion')
 
         for w, f, e, b in zip(obs_wave, obs_flux, obs_err, obs_band):
             col = sc[str(b)]
@@ -304,8 +307,12 @@ class disc_sed:
         ax1t = ax1.twiny()
         ax1t.set_xscale('log')
         ax1t.set_xlim(abs_xlim)
-        tw = [v for v in _BAND_TICKS.values() if 900 < v < 60000]
-        tl = [k for k, v in _BAND_TICKS.items() if 900 < v < 60000]
+        band_pairs = sorted(zip(obs_wave, [str(b).split('.')[-1].replace('KS', 'K') for b in obs_band]))
+        tw, tl = [], []
+        for w, label in band_pairs:
+            if not tw or (w - tw[-1]) / w > 0.12:
+                tw.append(w)
+                tl.append(label)
         ax1t.set_xticks(tw)
         ax1t.set_xticklabels(tl, fontsize=7)
         ax1t.tick_params(direction='in', which='both', top=True, length=3)
@@ -318,11 +325,8 @@ class disc_sed:
             if not mask.any(): continue
             col = sc[str(bsys)]
             ax2.errorbar(obs_wave[mask], resid_2comp[mask], yerr=resid_err[mask],
-                         fmt='o', ms=4,   color=col, mec=col, ecolor=col,
-                         elinewidth=0.7, capsize=2, mew=0.4, zorder=5)
-            ax2.errorbar(obs_wave[mask] * 1.03, resid_3comp[mask], yerr=resid_err[mask],
                          fmt='s', ms=3.5, color=col, mec=col, ecolor=col,
-                         elinewidth=0.7, capsize=2, mew=0.4, zorder=6)
+                         elinewidth=0.7, capsize=2, mew=0.4, zorder=5)
 
         ax2.set_xlabel(r'Wavelength (\AA)')
         ax2.set_ylabel(r'O$-$C (mag)')
