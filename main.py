@@ -6,6 +6,7 @@ import argparse as ap
 import subprocess
 import numpy as np
 import os
+import shutil
 from scipy.optimize import curve_fit
 import warnings
 
@@ -104,6 +105,10 @@ def main():
     current_phot = phot_file
 
     fit_SPEEDYFIT(logger, binary_yaml)
+
+    initial_obs_file = f"{name}_obs_initial.txt"
+    shutil.copy(OBS_FILE, initial_obs_file)
+    logger.info(f"Saved initial observations to {initial_obs_file}")
 
     if r_comp_sed is None:
         r_comp_sed = read_rad2_from_results(phot_file)
@@ -205,7 +210,7 @@ def main():
 
     disc_sed(
         name       = name,
-        obs_file   = OBS_FILE,
+        obs_file   = initial_obs_file,
         model_file = MODEL_FILE,
         dist       = dist,
         r_l        = r_max,
