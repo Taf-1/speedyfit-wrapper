@@ -43,7 +43,7 @@ pip install speedyfit==0.2.4 astropy astroquery numpy scipy matplotlib pandas em
 
 | File | Description |
 |---|---|
-| `main.py` | Top-level pipeline script |
+| `main.py` | pipeline script |
 | `SF_phot.py` | Reads SpeedyFit observation and model output files |
 | `third_comp_model.py` | Planck function, mag-to-flux conversion, blackbody disc model |
 | `third_comp_params.py` | Initial disc parameter estimates via Wien's law and Stefan-Boltzmann |
